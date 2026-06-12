@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Moorent PM — Calibrazione Score</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  :root{--bg:#0f172a;--surf:#1e293b;--surf2:#334155;--bdr:#475569;--txt:#f1f5f9;--mut:#94a3b8;--acc:#3b82f6;--acc2:#6366f1;--grn:#22c55e;--amb:#f59e0b;--red:#ef4444}
+  body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--txt);min-height:100vh;display:flex;flex-direction:column;align-items:center;padding:24px 16px 60px}
+  .logo{font-size:11px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--mut);margin-bottom:28px}
+  .screen{display:none;width:100%;max-width:720px}.screen.active{display:block}
+
+  /* INTRO */
+  .card{background:var(--surf);border:1px solid var(--bdr);border-radius:16px;padding:36px 32px}
+  .card h1{font-size:23px;font-weight:700;margin-bottom:10px}
+  .card>p{color:var(--mut);font-size:14px;line-height:1.6;margin-bottom:18px}
+  .ibox{background:var(--surf2);border-radius:10px;padding:14px 18px;font-size:13px;color:var(--mut);line-height:1.7;margin-bottom:22px}
+  .ibox strong{color:var(--txt)}
+  label{display:block;font-size:13px;color:var(--mut);margin-bottom:7px}
+  input[type=text]{width:100%;background:var(--surf2);border:1px solid var(--bdr);border-radius:8px;padding:11px 14px;color:var(--txt);font-size:15px;outline:none;margin-bottom:18px;transition:border-color .15s}
+  input[type=text]:focus{border-color:var(--acc)}
+  input[type=text]::placeholder{color:var(--bdr)}
+
+  /* PROGRESS */
+  .pw{background:var(--surf2);border-radius:99px;height:5px;margin-bottom:7px;overflow:hidden}
+  .pf{height:100%;border-radius:99px;background:linear-gradient(90deg,var(--acc),var(--acc2));transition:width .25s}
+  .pm{display:flex;justify-content:space-between;font-size:11px;color:var(--mut);margin-bottom:18px}
+
+  /* SECTION HEADER */
+  .slbl{font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--acc);margin-bottom:4px}
+  .ssubt{font-size:12px;color:var(--mut);line-height:1.5;padding:8px 12px;background:rgba(59,130,246,.06);border-left:2px solid var(--acc);border-radius:0 6px 6px 0;margin-bottom:14px}
+  .qcnt{font-size:11px;color:var(--bdr);margin-bottom:12px}
+
+  /* CARDS */
+  .crow{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:11px}
+  .tc{background:var(--surf);border:2px solid var(--bdr);border-radius:12px;padding:15px 14px;transition:border-color .15s,background .15s}
+  .tc.sa{border-color:var(--acc);background:rgba(59,130,246,.07)}
+  .tc.sb{border-color:var(--acc2);background:rgba(99,102,241,.07)}
+  .tc.sp{border-color:var(--amb)}
+  .clbl{font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;margin-bottom:8px}
+  .clbl.a{color:var(--acc)}.clbl.b{color:var(--acc2)}
+  .ctitle{font-size:13px;font-weight:700;color:var(--txt);line-height:1.4;margin-bottom:7px}
+  .cctx{font-size:12px;color:var(--mut);line-height:1.5;margin-bottom:6px}
+  .ccons{font-size:11px;color:#fca5a5;line-height:1.4;padding:5px 8px;background:rgba(239,68,68,.06);border-radius:5px;border-left:2px solid rgba(239,68,68,.3)}
+  .ccons.warn{color:#fcd34d;background:rgba(245,158,11,.06);border-color:rgba(245,158,11,.3)}
+  .ccons.info{color:#93c5fd;background:rgba(59,130,246,.06);border-color:rgba(59,130,246,.3)}
+  .ccons.green{color:#86efac;background:rgba(34,197,94,.06);border-color:rgba(34,197,94,.3)}
+
+  /* VOTE */
+  .vrow{display:grid;grid-template-columns:1fr auto 1fr;gap:8px;margin-bottom:18px}
+  .vb{padding:13px 8px;border-radius:10px;border:2px solid var(--bdr);background:var(--surf);color:var(--mut);font-size:13px;font-weight:600;cursor:pointer;transition:all .15s;text-align:center}
+  .vb:hover{border-color:var(--txt);color:var(--txt)}
+  .vb.va.active,.vb.va:hover{border-color:var(--acc);background:rgba(59,130,246,.1);color:#93c5fd}
+  .vb.vbv.active,.vb.vbv:hover{border-color:var(--acc2);background:rgba(99,102,241,.1);color:#a5b4fc}
+  .vb.vp.active,.vb.vp:hover{border-color:var(--amb);background:rgba(245,158,11,.07);color:#fcd34d}
+  .vb.vp{font-size:11px}
+
+  /* NAV */
+  .nrow{display:flex;justify-content:space-between;gap:10px}
+  .nb{padding:10px 20px;border-radius:8px;border:1px solid var(--bdr);background:transparent;color:var(--mut);font-size:13px;cursor:pointer;transition:all .15s}
+  .nb:hover{border-color:var(--txt);color:var(--txt)}
+  .nb.pri{background:var(--acc);border-color:var(--acc);color:white;font-weight:600}
+  .nb.pri:hover{background:#2563eb}
+  .nb:disabled{opacity:.25;cursor:not-allowed}
+
+  /* BTN */
+  .btn{padding:12px 22px;border-radius:9px;border:none;font-size:14px;font-weight:600;cursor:pointer;transition:all .15s;width:100%;margin-bottom:8px}
+  .bpri{background:var(--acc);color:white}.bpri:hover{background:#2563eb}
+  .bsec{background:var(--surf2);color:var(--txt)}.bsec:hover{background:var(--bdr)}
+  .bgrn{background:var(--grn);color:white}.bgrn:hover{background:#16a34a}
+
+  /* END */
+  .ecard{background:var(--surf);border:1px solid var(--bdr);border-radius:16px;padding:36px 32px;text-align:center}
+  .ecard h2{font-size:20px;font-weight:700;margin-bottom:10px}
+  .ecard>p{color:var(--mut);font-size:14px;line-height:1.6;margin-bottom:22px}
+  .chk{font-size:44px;margin-bottom:16px}
+  .mdout{background:var(--bg);border:1px solid var(--bdr);border-radius:8px;padding:14px;font-family:'SF Mono',monospace;font-size:11px;color:var(--mut);text-align:left;white-space:pre-wrap;word-break:break-word;max-height:220px;overflow-y:auto;margin-bottom:14px;line-height:1.5}
+  .cmsg{font-size:12px;color:var(--grn);margin-top:6px;min-height:18px}
+
+  @media(max-width:500px){.crow{grid-template-columns:1fr}.card,.ecard{padding:22px 16px}}
+</style>
+</head>
+<body>
+<div class="logo">Moorent PM · Calibrazione Score</div>
+
+<div id="si" class="screen active">
+  <div class="card">
+    <h1>Calibrazione Pesi Score Task</h1>
+    <p>Le tue risposte determinano i pesi numerici reali della formula di scoring. Ogni scenario rispecchia situazioni concrete del lavoro Moorent PM.</p>
+    <div class="ibox">
+      <strong>Come rispondere:</strong> ti vengono mostrate due task reali. Scegli quale lavoreresti <strong>per prima</strong>, oppure <strong>Parità</strong> se le tratti allo stesso modo.<br><br>
+      · <strong>74 domande</strong> in 13 sezioni · circa 15 minuti<br>
+      · Scorciatoie: <strong>A / ←</strong> · <strong>B / →</strong> · <strong>Spazio</strong> per Parità · <strong>Invio</strong> avanti · <strong>Backspace</strong> indietro
+    </div>
+    <label>Il tuo nome</label>
+    <input type="text" id="un" placeholder="es. Mattia" autocomplete="off"/>
+    <button class="btn bpri" onclick="start()">Inizia →</button>
+  </div>
+</div>
+
+<div id="sq" class="screen">
+  <div class="pw"><div class="pf" id="pf" style="width:0%"></div></div>
+  <div class="pm"><span id="pt">Domanda 1 di 74</span><span id="ps">Sezione 1/13</span></div>
+  <div class="slbl" id="ql"></div>
+  <div class="ssubt" id="qs"></div>
+  <div class="qcnt" id="qc"></div>
+  <div class="crow">
+    <div class="tc" id="ca">
+      <div class="clbl a">Task A</div>
+      <div class="ctitle" id="cat"></div>
+      <div class="cctx" id="cac"></div>
+      <div id="cacon" style="display:none"></div>
+    </div>
+    <div class="tc" id="cb">
+      <div class="clbl b">Task B</div>
+      <div class="ctitle" id="cbt"></div>
+      <div class="cctx" id="cbc"></div>
+      <div id="cbcon" style="display:none"></div>
+    </div>
+  </div>
+  <div class="vrow">
+    <button class="vb va" id="bva" onclick="vote('A')">← Lavoro A prima</button>
+    <button class="vb vp" id="bvp" onclick="vote('P')">Parità</button>
+    <button class="vb vbv" id="bvb" onclick="vote('B')">Lavoro B prima →</button>
+  </div>
+  <div class="nrow">
+    <button class="nb" id="bk" onclick="back()">← Indietro</button>
+    <button class="nb pri" id="nx" onclick="next()" disabled>Avanti →</button>
+  </div>
+</div>
+
+<div id="se" class="screen">
+  <div class="ecard">
+    <div class="chk">✓</div>
+    <h2>Completato!</h2>
+    <p>Copia il Markdown e incollalo nella chat con Claude per calibrare la formula di scoring.</p>
+    <div class="mdout" id="mdo"></div>
+    <button class="btn bgrn" onclick="cpMd()">Copia Markdown negli appunti</button>
+    <button class="btn bsec" onclick="dlMd()">Scarica come file .md</button>
+    <div class="cmsg" id="cm"></div>
+  </div>
+</div>
+
+<script>
+// ─── DATA ───────────────────────────────────────────────────────────────────
+// Each question: a/b = { t: title, ctx: context, con: consequence (optional), ctype: 'danger'|'warn'|'info'|'green' }
+const SECS=[
+{id:1,label:"Sezione 1 — Urgenza Temporale",
+sub:"Stessa task, stesso tipo, stessa priorità. Cambia solo la scadenza. Ogni giorno di differenza quanto pesa sulla tua scelta?",
+qs:[
+{a:{t:"Versamento tassa soggiorno Q2",ctx:"5 Comuni · priorità alta · cliente GC stabile",con:"Scadenza: domani (16/6) — mora automatica 30% se non paghi oggi",ct:"danger"},
+ b:{t:"Versamento tassa soggiorno Q2",ctx:"5 Comuni · priorità alta · cliente GC stabile",con:"Scadenza: tra 3 giorni (18/6) — stessa mora se ritardi",ct:"warn"}},
+{a:{t:"Rinnovo CIN bilocale Venezia — Sig. Marchetti",ctx:"burocratica · priorità alta · GC stabile",con:"Scadenza: tra 3 giorni — struttura illegale + multa €5.000 se scade",ct:"danger"},
+ b:{t:"Rinnovo CIN bilocale Venezia — Sig. Marchetti",ctx:"burocratica · priorità alta · GC stabile",con:"Scadenza: tra 7 giorni — stesso rischio, ma hai più margine",ct:"warn"}},
+{a:{t:"Certificazione LT annuale — B&B Colline Euganee",ctx:"burocratica · priorità alta",con:"Scadenza: tra 7 giorni — senza cert. la struttura non opera legalmente",ct:"danger"},
+ b:{t:"Certificazione LT annuale — B&B Colline Euganee",ctx:"burocratica · priorità alta",con:"Scadenza: tra 30 giorni — stesso rischio, ampio margine",ct:"info"}},
+{a:{t:"Invio rendiconto mensile maggio — Sig.ra Conti",ctx:"billing · alta · GC stabile · accordo: rendiconto entro il 10 del mese",con:"Scadenza: domani — la proprietaria ha già scritto una volta chiedendo aggiornamenti",ct:"warn"},
+ b:{t:"Invio rendiconto mensile maggio — Sig. Ferretti",ctx:"billing · alta · GC stabile · stesso accordo contrattuale",con:"Scadenza: tra 7 giorni — stessa situazione, nessuna pressione ancora",ct:"info"}},
+{a:{t:"Primo contatto con lead qualificato — Milano, bilocale Navigli",ctx:"ha visitato il sito 4 volte questa settimana · regola interna: primo contatto entro 48h",con:"Scadenza: entro 24h — lead caldo che si raffredda velocemente, probabilmente contatta competitor",ct:"danger"},
+ b:{t:"Primo contatto con lead qualificato — Verona, trilocale",ctx:"profilo simile · stessa regola interna",con:"Scadenza: entro 5 giorni — stesso rischio, ma ci sono più giorni",ct:"info"}},
+]},
+{id:2,label:"Sezione 2 — Tipo di Task",
+sub:"Stessa priorità (alta), stessa scadenza (5 giorni), stesso cliente stabile GC. Cambia solo la categoria. Come pesano i tipi tra loro?",
+qs:[
+{a:{t:"Rinnovo CIN bilocale Padova — Sig. Bianchi",ctx:"burocratica · alta · scad. 5gg · GC stabile",con:"Se scade: struttura illegale, tutte le piattaforme vanno bloccate, sanzione €5.000",ct:"danger"},
+ b:{t:"Generazione rendiconto mensile maggio — Sig. Bianchi",ctx:"billing · alta · scad. 5gg · stesso cliente",con:"Se non inviato: proprietario senza aggiornamento economico, possibile insoddisfazione",ct:"warn"}},
+{a:{t:"Versamento tassa soggiorno Q2 al Comune di Padova",ctx:"burocratica · alta · scad. 5gg",con:"Se ritardi: mora automatica 30% sull'importo, il Comune applica sanzione senza preavviso",ct:"danger"},
+ b:{t:"Richiamare Sig.ra Ferrari che ha scritto 'preoccupata per i numeri di maggio, voglio parlare'",ctx:"comunicazione urgente · alta · scad. 5gg",con:"Se non richiamiamo: cliente che si sente abbandonata, rischio churn concreto",ct:"warn"}},
+{a:{t:"Calcolare e inviare rendiconto maggio a tutti i proprietari GC",ctx:"billing · alta · scad. 5gg · commissioni aggregate €4.200 da fatturare",con:"Se in ritardo: insoddisfazione proprietari, possibili contestazioni su importi",ct:"warn"},
+ b:{t:"Richiamare lead referral — 'un mio amico con 3 immobili vi sta valutando'",ctx:"comunicazione urgente · alta · scad. 5gg",con:"Se non richiamiamo entro giorni: lead da potenziale €12.000/anno commissioni si perde",ct:"danger"}},
+{a:{t:"Rispondere a proprietario di Vicenza che manda messaggi ogni 2 giorni, tono sempre più ansioso",ctx:"comunicazione urgente · alta · scad. 5gg",con:"Se ignoriamo ancora: cliente che si sente abbandonato, potrebbe chiedere rescissione",ct:"warn"},
+ b:{t:"Setup Airbnb + Booking + CiaoBooking per nuovo appartamento Treviso",ctx:"onboarding · alta · scad. 5gg · proprietario ha firmato 3 settimane fa",con:"Ogni giorno di ritardo = prenotazioni estive perse. Alta stagione già iniziata.",ct:"danger"}},
+{a:{t:"Configurare annunci e dynamic pricing nuovo appartamento Verona — go live previsto lunedì",ctx:"onboarding · alta · scad. 5gg",con:"Se ritardiamo: settimana di prenotazioni perse in alta stagione, proprietario deluso al primo mese",ct:"danger"},
+ b:{t:"Coordinare turnover pulizie bilocale Padova dopo check-out",ctx:"operativa · alta · scad. 5gg · prossimo ospite arriva tra 6 giorni",con:"Se non organizziamo: appartamento sporco all'arrivo dell'ospite, recensione negativa",ct:"warn"}},
+{a:{t:"Pratica SUAP inizio locazione turistica — via Roma 12, Padova",ctx:"burocratica · alta · scad. 5gg",con:"Senza SUAP la struttura non può operare legalmente né aprire su Airbnb",ct:"danger"},
+ b:{t:"Prima videochiamata fiscale con commercialista Matteo Sabetta — nuovo proprietario",ctx:"onboarding · alta · scad. 5gg · step critico: senza questa call il contratto non si chiude",con:"Se rimettiamo: il processo di onboarding si blocca, proprietario perde fiducia",ct:"warn"}},
+{a:{t:"Sopralluogo tecnico urgente bilocale Venezia — problema al riscaldamento",ctx:"operativa · alta · scad. 5gg · ospiti arrivano tra 4 giorni",con:"Se non organizziamo: ospiti trovano appartamento senza riscaldamento, emergenza e recensione 1 stella",ct:"danger"},
+ b:{t:"Aggiornare procedure interne comunicazione con ospiti",ctx:"corporate · alta · scad. 5gg",con:"Se ritardiamo: nessun impatto immediato, solo efficienza interna del team",ct:"info"}},
+]},
+{id:3,label:"Sezione 3 — Priorità Esplicita",
+sub:"Stessa task, stessa scadenza (7 giorni), stesso cliente GC stabile. Cambia solo la priorità assegnata. Quanto ti fidi del tag di priorità?",
+qs:[
+{a:{t:"Aggiornare listini dinamici per alta stagione",ctx:"operativa · GC stabile · scad. 7gg",con:"Priorità: URGENTE — segnalata da Mattia dopo call con proprietario",ct:"danger"},
+ b:{t:"Aggiornare listini dinamici per alta stagione",ctx:"operativa · GC stabile · scad. 7gg",con:"Priorità: ALTA — standard",ct:"warn"}},
+{a:{t:"Organizzare sopralluogo per micro-investimento home staging",ctx:"operativa · GC stabile · scad. 7gg",con:"Priorità: ALTA — segnalata come importante per aumentare occupazione del 15%",ct:"warn"},
+ b:{t:"Stessa attività per appartamento diverso",ctx:"operativa · GC stabile · scad. 7gg",con:"Priorità: MEDIA",ct:"info"}},
+{a:{t:"Verificare e aggiornare welcome kit per nuova stagione",ctx:"operativa · GC stabile · scad. 7gg",con:"Priorità: MEDIA",ct:"info"},
+ b:{t:"Stessa verifica per un altro appartamento",ctx:"operativa · GC stabile · scad. 7gg",con:"Priorità: BASSA",ct:"info"}},
+{a:{t:"Task segnalata URGENTE da Beatrice (senza spiegazione del perché)",ctx:"operativa · GC stabile · scad. 7gg",con:"Priorità: URGENTE — solo un tag, nessuna nota aggiuntiva",ct:"danger"},
+ b:{t:"Task segnalata MEDIA con nota: 'Questa struttura ha il contratto in scadenza tra 2 mesi, dimostrare valore ora è cruciale'",ctx:"operativa · GC stabile · scad. 7gg",con:"Priorità: MEDIA — ma il contesto strategico è chiarissimo",ct:"warn"}},
+]},
+{id:4,label:"Sezione 4 — Task Scaduta (Ritardo)",
+sub:"Stessa task, stessa tipologia, stesso cliente GC stabile. Quanto conta da quanti giorni è scaduta?",
+qs:[
+{a:{t:"Rinnovo polizza assicurativa annuale — struttura Venezia",ctx:"burocratica · alta · GC stabile",con:"⚠ Scaduta da 1 giorno — la struttura ha ospiti dentro, non è assicurata",ct:"danger"},
+ b:{t:"Rinnovo polizza assicurativa annuale — struttura Venezia",ctx:"burocratica · alta · GC stabile",con:"⚠ Scaduta da 5 giorni — stessa situazione, ma il rischio si accumula",ct:"danger"}},
+{a:{t:"Versamento tassa soggiorno Q1 al Comune",ctx:"burocratica · alta",con:"⚠ Scaduta da 5 giorni — mora 30% applicata, il Comune non ha ancora mandato notifica formale",ct:"danger"},
+ b:{t:"Versamento tassa soggiorno Q1 al Comune",ctx:"burocratica · alta",con:"⚠ Scaduta da 15 giorni — mora 30% + il Comune ha inviato prima diffida scritta",ct:"danger"}},
+{a:{t:"Rinnovo CIN trilocale Venezia — Sig. Russo",ctx:"burocratica · alta",con:"⚠ Scaduta ieri — la struttura è attiva sulle piattaforme fuori legge da 24 ore",ct:"danger"},
+ b:{t:"Rinnovo CIN trilocale Venezia — Sig. Russo",ctx:"burocratica · alta",con:"Scade domani — non ancora scaduta, ma se non agisci oggi sarà come sopra",ct:"warn"}},
+{a:{t:"Certificazione LT struttura B&B — Sig.ra Conti",ctx:"burocratica · alta",con:"⚠ Scaduta da 3 giorni — la struttura continua ad operare, proprietaria non ancora informata",ct:"danger"},
+ b:{t:"Certificazione LT struttura B&B — Sig.ra Conti",ctx:"burocratica · alta",con:"Scade tra 2 giorni — ancora in regola, finestra di azione ancora aperta",ct:"warn"}},
+{a:{t:"Modello 770 — invio al commercialista Matteo Sabetta",ctx:"burocratica · alta",con:"⚠ Scaduto da 10 giorni — commercialista ha già scritto 2 volte, rischio sanzione amministrativa",ct:"danger"},
+ b:{t:"Versamento tassa soggiorno Q2 — 5 Comuni",ctx:"burocratica · alta",con:"Scade oggi — se non paghi entro le 24h scatta automaticamente la mora 30%",ct:"warn"}},
+]},
+{id:5,label:"Sezione 5 — Relazione Cliente (Giorni senza contatto)",
+sub:"Task identica: stessa operativa, stessa priorità, stessa scadenza. Cambia solo da quanto tempo non avete contatti con il proprietario.",
+qs:[
+{a:{t:"Aggiornare dynamic pricing — Sig. Ferretti",ctx:"GC stabile · operativa · alta · scad. 7gg",con:"Nessun contatto da 35 giorni — l'ultimo messaggio nostro è rimasto senza risposta",ct:"warn"},
+ b:{t:"Aggiornare dynamic pricing — Sig. Rossi",ctx:"GC stabile · operativa · alta · scad. 7gg",con:"Contattato 3 giorni fa — relazione attiva, nessuna preoccupazione",ct:"info"}},
+{a:{t:"Inviare rendiconto mensile — Sig. Conti",ctx:"GC stabile · alta · scad. 7gg",con:"Nessun contatto da 60 giorni — l'anno scorso in questo periodo aveva chiesto informazioni per rescindere",ct:"danger"},
+ b:{t:"Inviare rendiconto mensile — Sig. Bianchi",ctx:"GC stabile · alta · scad. 7gg",con:"Nessun contatto da 35 giorni — mai dato segnali di insoddisfazione, cliente tranquillo",ct:"warn"}},
+{a:{t:"Ottimizzare annuncio stagionale — Sig. Moretti",ctx:"GC stabile · alta · scad. 7gg",con:"Nessun contatto da 35 giorni — tono storicamente un po' freddo, difficile da leggere",ct:"warn"},
+ b:{t:"Ottimizzare annuncio stagionale — Sig. Verdi",ctx:"GC stabile · alta · scad. 7gg",con:"Nessun contatto da 15 giorni — cliente facile, risponde sempre, mai un problema",ct:"info"}},
+{a:{t:"Aggiornamento performance mensile — Sig. Ricci",ctx:"GC · alta · revenue media €1.800/mese · scad. 7gg",con:"Ultima comunicazione 4 settimane fa — non sappiamo come sta percependo questo mese",ct:"warn"},
+ b:{t:"Aggiornamento performance mensile — Sig. Russo",ctx:"GC · alta · revenue media €1.200/mese · scad. 7gg",con:"Sentito la settimana scorsa — tutto ok, espresso soddisfazione nella call",ct:"info"}},
+{a:{t:"Prima task operativa post-onboarding — Sig. Martini",ctx:"GC · contratto firmato 5 giorni fa · nessuna comunicazione post-firma ancora",con:"Appena acquisito: il primo contatto operativo è la prima impressione reale del servizio",ct:"warn"},
+ b:{t:"Coordinare manutenzione programmata — Sig. Verdi",ctx:"GC stabile · contattato 10 giorni fa · relazione consolidata",con:"Manutenzione ordinaria, nessuna urgenza relazionale",ct:"info"}},
+]},
+{id:6,label:"Sezione 6 — Task senza Data (Invecchiamento)",
+sub:"Task senza nessuna scadenza impostata. Quanto conta l'età di una task priva di deadline? Confronto con task che hanno data.",
+qs:[
+{a:{t:"Completare registrazione su portale Ross1000 — struttura Sig. Marchetti",ctx:"burocratica · media · nessuna scadenza impostata · aperta da 2 mesi",con:"Nota: 'da fare quando si trova il tempo' — ma serve per conformità regionale Veneto",ct:"warn"},
+ b:{t:"Rinnovo CIN bilocale Venezia — Sig. Ferretti",ctx:"burocratica · media",con:"Scadenza: tra 15 giorni — sanzione €5.000 se non rinnovato",ct:"warn"}},
+{a:{t:"Aggiornamento SUAP per modifica struttura via Garibaldi",ctx:"burocratica · nessuna scadenza · aperta da 1 settimana",con:"Nota: 'modifica di dettaglio, non urgente ma necessaria per continuità'",ct:"info"},
+ b:{t:"Versamento tassa soggiorno Q3",ctx:"burocratica · scadenza: tra 30 giorni",con:"Mora 30% se non pagato entro scadenza",ct:"info"}},
+{a:{t:"Inviare documentazione fiscale a commercialista Matteo Sabetta",ctx:"burocratica · nessuna scadenza · aperta da 3 mesi",con:"Il commercialista ha già riscritto 2 volte. Ogni mese che passa peggiora il rapporto professionale.",ct:"danger"},
+ b:{t:"Stessa task — aperta da 2 settimane",ctx:"burocratica · nessuna scadenza",con:"Il commercialista non ha ancora scritto — tutto ancora gestibile",ct:"info"}},
+{a:{t:"Aggiornare contratto tipo (revisione clausole legali post-normativa CIN)",ctx:"corporate · nessuna scadenza · aperta da 45 giorni",con:"Ogni nuovo contratto firmato usa ancora le clausole vecchie. Rischio legale crescente.",ct:"warn"},
+ b:{t:"Rinnovo polizza assicurativa annuale",ctx:"burocratica · scadenza: tra 7 giorni",con:"Struttura scoperta se non rinnovi entro scadenza",ct:"danger"}},
+{a:{t:"Creare checklist onboarding interna (processo step-by-step)",ctx:"corporate · nessuna scadenza · aperta da 1 anno",con:"Ogni nuovo onboarding richiede 40% di tempo in più perché non c'è una procedura scritta",ct:"warn"},
+ b:{t:"Versamento tassa soggiorno Q4",ctx:"burocratica · scadenza: tra 3 mesi",con:"Mora 30% se non pagato — scadenza lontana ma certa",ct:"info"}},
+]},
+{id:7,label:"Sezione 7 — Status della Task",
+sub:"Stessa task, stessa priorità, stessa scadenza. Cambia solo lo stato attuale. Il fatto che sia bloccata o già in corso cambia quanto la prioritizzi?",
+qs:[
+{a:{t:"Organizzare sopralluogo tecnico — guasto impianto idraulico appartamento Padova",ctx:"operativa · urgente · ospite arriva tra 4 giorni",con:"Status: DA FARE — libera, nessuno l'ha ancora presa in carico",ct:"info"},
+ b:{t:"Stessa emergenza — appartamento Venezia",ctx:"operativa · urgente · ospite arriva tra 4 giorni",con:"Status: STAND-BY — il tecnico ha detto 'vi richiamo io entro domani'",ct:"warn"}},
+{a:{t:"Preparare rendiconto mensile maggio — Sig.ra Conti",ctx:"billing · alta · scad. 3gg · GC · revenue €2.100/mese",con:"Status: IN LAVORAZIONE — Riccardo ha già iniziato, è a circa metà",ct:"info"},
+ b:{t:"Preparare rendiconto mensile maggio — Sig. Bianchi",ctx:"billing · alta · scad. 3gg · GC · revenue €2.100/mese",con:"Status: DA FARE — nessuno l'ha ancora presa in carico",ct:"warn"}},
+{a:{t:"Gestire rottura caldaia appartamento Padova — 2 ospiti inside",ctx:"operativa · urgente",con:"Status: STAND-BY URGENTE — aspetta che l'idraulico di fiducia si liberi (risponde domani)",ct:"danger"},
+ b:{t:"Stessa emergenza — appartamento Venezia, 2 ospiti",ctx:"operativa · urgente",con:"Status: DA FARE URGENTE — nessun tecnico ancora chiamato, tutto da organizzare",ct:"danger"}},
+{a:{t:"Inviare contratto firmato al notaio — Sig. Rossi",ctx:"burocratica · alta · scad. 2gg",con:"Status: IN REVIEW — attende ok finale di Beatrice prima dell'invio",ct:"warn"},
+ b:{t:"Preparare contratto da zero per Sig. Conti",ctx:"burocratica · alta · scad. 5gg",con:"Status: DA FARE — da impostare da zero su template",ct:"info"}},
+{a:{t:"Ottimizzare prezzi alta stagione — appartamento Venezia",ctx:"operativa · alta · scad. 4gg",con:"Status: IN LAVORAZIONE — Mattia ci sta già lavorando oggi",ct:"info"},
+ b:{t:"Rinnovare polizza assicurativa annuale — struttura Padova",ctx:"burocratica · alta · scad. 5gg",con:"Status: STAND-BY — assicuratore non risponde da 3 giorni, siamo bloccati",ct:"warn"}},
+]},
+{id:8,label:"Sezione 8 — Tipo di Servizio Cliente",
+sub:"Task identica, stessa urgenza. Cambia solo il tipo di contratto del proprietario — che riflette il valore economico del cliente per Moorent.",
+qs:[
+{a:{t:"Aggiornare dynamic pricing per estate 2024",ctx:"operativa · alta · scad. 5gg",con:"Cliente: Gestione Completa (25%) — genera ~€2.400/mese di commissioni per Moorent",ct:"green"},
+ b:{t:"Stessa task, priorità e scadenza identiche",ctx:"operativa · alta · scad. 5gg",con:"Cliente: Gestione Online (15%) — genera ~€900/mese di commissioni per Moorent",ct:"info"}},
+{a:{t:"Rinnovo CIN struttura — scadenza tra 7 giorni",ctx:"burocratica · alta",con:"Cliente: Gestione Completa (25%) — se va in default burocratico, perde fiducia in Moorent",ct:"green"},
+ b:{t:"Rinnovo CIN struttura — stessa scadenza",ctx:"burocratica · alta",con:"Cliente: Subaffitto Strategico — Moorent paga canone fisso €800/mese indipendentemente",ct:"info"}},
+{a:{t:"Invio rendiconto mensile — Sig. Ferretti",ctx:"billing · alta · scad. 5gg",con:"Cliente: Gestione Online (15%) — commissioni ~€600/mese",ct:"info"},
+ b:{t:"Stesso rendiconto mensile — Sig. Martini",ctx:"billing · alta · scad. 5gg",con:"Cliente: Subaffitto — nessuna commissione percentuale, solo margine canone fisso",ct:"info"}},
+{a:{t:"Rispondere a richiesta del proprietario",ctx:"operativa · scad. 5gg",con:"Priorità: MEDIA · Cliente: Gestione Completa (25%) · portafoglio da €3.200/mese commissioni",ct:"green"},
+ b:{t:"Rispondere a richiesta di un altro proprietario",ctx:"operativa · stessa scadenza",con:"Priorità: URGENTE · Cliente: Gestione Online (15%) · portafoglio da €700/mese commissioni",ct:"warn"}},
+{a:{t:"Versamento tassa soggiorno Q2 — scade tra 5 giorni",ctx:"burocratica · alta",con:"Cliente: Gestione Online (15%) — commissioni €650/mese",ct:"info"},
+ b:{t:"Versamento tassa soggiorno Q2 — scade tra 5 giorni",ctx:"burocratica · alta",con:"Cliente: Gestione Completa (25%) — commissioni €2.800/mese",ct:"green"}},
+]},
+{id:9,label:"Sezione 9 — Fase Cliente (Onboarding vs Stabile)",
+sub:"Task identica, priorità e scadenza identiche. Cambia solo da quanto il proprietario è con Moorent PM. Il periodo di onboarding è più critico?",
+qs:[
+{a:{t:"Setup completo piattaforme: Airbnb, Booking, CiaoBooking + dynamic pricing",ctx:"operativa · alta · GC · scad. 7gg",con:"Cliente: mese 1 di onboarding — aspetta di vedere i primi risultati, ogni ritardo lo preoccupa",ct:"warn"},
+ b:{t:"Stessa configurazione per altro appartamento",ctx:"operativa · alta · GC · stessa scadenza",con:"Cliente: stabile da 2 anni — rapporto solido, il proprietario è paziente e fiducioso",ct:"info"}},
+{a:{t:"Primo giro ottimizzazione pricing + testi annuncio",ctx:"operativa · alta · GC · scad. 7gg",con:"Cliente: 2° mese di onboarding — prime prenotazioni arrivate, sta valutando se ha fatto bene a sceglierci",ct:"warn"},
+ b:{t:"Ottimizzazione stagionale annuncio",ctx:"operativa · alta · GC · stessa scadenza",con:"Cliente: stabile da 6 mesi — tutto funziona, fine-tuning di routine",ct:"info"}},
+{a:{t:"Organizzare prima call operativa post-contratto",ctx:"onboarding · alta · GC · scad. 7gg",con:"Cliente: contratto firmato 1 settimana fa — primo vero punto di contatto, si aspetta professionailità totale",ct:"warn"},
+ b:{t:"Call trimestrale di aggiornamento",ctx:"operativa · alta · GC · stessa scadenza",con:"Cliente: stabile da 14 mesi — call di routine, relazione consolidata",ct:"info"}},
+{a:{t:"Coordinare primo check-out + pulizie — prima prenotazione in assoluto",ctx:"operativa · alta · onboarding mese 2",con:"È il primo test reale del servizio che il proprietario vedrà con i propri occhi",ct:"warn"},
+ b:{t:"Rinnovo CIN struttura — stessa scadenza",ctx:"burocratica · alta · cliente stabile da 1 anno",con:"Sanzione €5.000 se non rinnovato — conseguenza certa e quantificata",ct:"danger"}},
+{a:{t:"Aggiornare listini OTA per estate",ctx:"operativa · alta · GC · scad. 7gg",con:"Cliente: onboarding mese 1 — ogni giorno di ritardo = prenotazioni estive perse, proprietario deluso",ct:"warn"},
+ b:{t:"Stessa task identica",ctx:"operativa · alta · GC · stessa scadenza",con:"Cliente: GC stabile 18 mesi, ma nessun contatto da 40 giorni — relazione silenziosa e trascurata",ct:"warn"}},
+]},
+{id:10,label:"Sezione 10 — Obiettivo Trimestrale (OKR)",
+sub:"Task con o senza collegamento a un OKR aziendale del trimestre. Quanto pesa il fatto che una task sia strategicamente rilevante?",
+qs:[
+{a:{t:"Primo contatto con lead Milano — bilocale Navigli, ha letto la brochure 4 volte",ctx:"comunicazione urgente · alta · scad. 5gg",con:"🎯 Collegata a OKR Q3: 'Acquisire 3 nuovi clienti fuori Triveneto' — lead caldo",ct:"green"},
+ b:{t:"Stesso lead, stesso potenziale, stessa urgenza",ctx:"comunicazione urgente · alta · stessa scadenza",con:"Nessun obiettivo trimestrale collegato — acquisizione ordinaria",ct:"info"}},
+{a:{t:"Analisi espansione nuova area — Lago di Garda",ctx:"operativa · scad. 7gg",con:"Priorità: BASSA · 🎯 Collegata a OKR: 'Mappare 5 nuove zone ad alta stagionalità Q3'",ct:"green"},
+ b:{t:"Stessa analisi geografica",ctx:"operativa · stessa scadenza",con:"Priorità: MEDIA · Nessun OKR collegato",ct:"info"}},
+{a:{t:"Business plan per investitore HNWI con 3 immobili di lusso",ctx:"onboarding · alta · scad. 15gg",con:"🎯 Collegata a OKR: 'Acquisire cliente multi-immobile' — potenziale €8.000/mese commissioni",ct:"green"},
+ b:{t:"Coordinare pulizie straordinarie appartamento Padova",ctx:"operativa · alta · scad. 7gg",con:"Nessun OKR collegato — operatività quotidiana necessaria",ct:"info"}},
+{a:{t:"Sviluppare partnership con studio notarile per referral reciproci",ctx:"corporate · alta",con:"Status: STAND-BY — in attesa di appuntamento · 🎯 Collegata a OKR referral Q3",ct:"warn"},
+ b:{t:"Rivedere script delle chiamate commerciali",ctx:"corporate · alta",con:"Status: DA FARE · Nessun OKR · miglioramento interno senza scadenza",ct:"info"}},
+]},
+{id:11,label:"Sezione 11 — Complessità della Task",
+sub:"Stessa scadenza (5 giorni), stessa priorità (alta), stesso cliente GC. Cambia solo quanto effort cognitivo e relazionale richiede la task.",
+qs:[
+{a:{t:"Inviare PDF del riepilogo mensile via email — Sig. Ferrari",ctx:"semplice · ~5 minuti · esecuzione meccanica",con:"Nessuna decisione da prendere — carica il file, scrivi l'email, invia",ct:"info"},
+ b:{t:"Mediare situazione di tensione: proprietario accusa gli ospiti di danni al parquet da €1.500",ctx:"complessa · richiede analisi prove, tatto, gestione aspettative",con:"Sbagliare l'approccio = perdere il proprietario o rischiare una recensione distruttiva",ct:"danger"}},
+{a:{t:"Caricare nuove foto professionali sull'annuncio Airbnb + aggiornare descrizione",ctx:"media · ~40 minuti · attenzione ai dettagli e alla SEO",con:"Se fatto bene: +10-15% CTR annuncio, più prenotazioni",ct:"info"},
+ b:{t:"Mandare WhatsApp per confermare l'appuntamento del sopralluogo",ctx:"semplice · ~2 minuti · messaggio standard",con:"Esecuzione meccanica, nessuna decisione",ct:"info"}},
+{a:{t:"Gestire ricorso contro delibera condominiale che vieta gli affitti brevi — struttura Sig. Russo",ctx:"complessa · coinvolge aspetti legali, mediazione, strategia a lungo termine · nessuna scadenza · aperta 2 settimane",con:"Se non gestiamo bene: il proprietario perde il diritto di fare affitti brevi in quella struttura",ct:"danger"},
+ b:{t:"Aggiornare le date di disponibilità su CiaoBooking",ctx:"semplice · scadenza: tra 7 giorni",con:"Esecuzione tecnica standard, nessun rischio",ct:"info"}},
+{a:{t:"Inviare recap onboarding firmato al nuovo proprietario",ctx:"semplice · Priorità: URGENTE · il proprietario aspetta questo documento per procedere",con:"~10 minuti, documento già pronto da personalizzare",ct:"warn"},
+ b:{t:"Gestire trattativa con proprietario che ha ricevuto offerta da competitor",ctx:"complessa · Priorità: ALTA",con:"Sta valutando attivamente se restare. Un approccio sbagliato = perdere il contratto",ct:"danger"}},
+{a:{t:"Riscrivere testi annuncio in italiano + inglese per nuova stagione",ctx:"media · ~45 minuti",con:"Impatto diretto su occupazione: annuncio ottimizzato = +10% prenotazioni stimate",ct:"info"},
+ b:{t:"Preparare business plan completo per lead con 2 immobili di lusso zona Venezia",ctx:"complessa · 3+ ore · analisi AirDNA + proiezioni + presentazione PDF",con:"Potenziale €10.000/anno commissioni se acquisito",ct:"green"}},
+]},
+{id:12,label:"Sezione 12 — Durata Stimata",
+sub:"Stessa scadenza e priorità. Cambia solo quanto tempo ci vorrà per completare la task. Una task rapida vs una lunga: quale prendi in carico per prima?",
+qs:[
+{a:{t:"Inviare aggiornamento WhatsApp al proprietario sulla settimana",ctx:"comunicazione · alta · scad. 5gg",con:"Durata: ~10 minuti · messaggio standard, nessuna analisi",ct:"info"},
+ b:{t:"Preparare e inviare rendiconto mensile completo con analisi",ctx:"billing · alta · stessa scadenza",con:"Durata: ~90 minuti · calcoli, grafici, note personalizzate",ct:"info"}},
+{a:{t:"Confermare prenotazione manuale su Booking.com",ctx:"operativa · alta",con:"Durata: ~5 minuti · operazione tecnica standard",ct:"info"},
+ b:{t:"Aggiornare prezzi e disponibilità su tutti i portali OTA",ctx:"operativa · alta · stessa urgenza",con:"Durata: ~30 minuti · ogni portale va fatto separatamente",ct:"info"}},
+{a:{t:"Inviare reminder scadenza CIN al proprietario",ctx:"burocratica · Priorità: URGENTE",con:"Durata: ~15 minuti · email standard già template",ct:"warn"},
+ b:{t:"Costruire risposta articolata a recensione 4 stelle con commento critico su Airbnb",ctx:"comunicazione · Priorità: ALTA · 'La risposta è pubblica e influenza tutti i futuri ospiti'",con:"Durata: ~90 minuti · tono, contenuto e strategia della risposta contano molto",ct:"warn"}},
+{a:{t:"Chiamata veloce di aggiornamento con il proprietario",ctx:"comunicazione · nessuna scadenza",con:"Durata: ~20 minuti · check-in di routine",ct:"info"},
+ b:{t:"Aggiornare proiezioni revenue del portfolio per la weekly sync di lunedì",ctx:"operativa · scad. 3 giorni",con:"Durata: ~1 ora · dati da raccogliere, elaborare e presentare",ct:"info"}},
+{a:{t:"Caricare 8 nuove foto professionali sull'annuncio Airbnb",ctx:"operativa · media",con:"Durata: ~20 minuti · foto già pronte, solo upload e riordinamento",ct:"info"},
+ b:{t:"Ottimizzare completamente l'annuncio: testi, foto, pricing, SEO titolo, amenities",ctx:"operativa · stessa priorità",con:"Durata: ~60 minuti · stima: +15% occupazione se ottimizzato bene",ct:"green"}},
+]},
+{id:13,label:"Sezione 13 — Confronti Incrociati",
+sub:"Dilemmi reali dove più fattori competono tra loro. Non c'è una risposta ovvia. Queste domande rivelano quali dimensioni pesano di più rispetto ad altre nel tuo ragionamento.",
+qs:[
+{a:{t:"Rinnovo CIN appartamento Padova",ctx:"burocratica · alta · scade tra 5 giorni · cliente GC contattato 2 giorni fa",con:"Se scade: struttura illegale, multa €5.000, sospensione piattaforme",ct:"danger"},
+ b:{t:"Invio rendiconto mensile maggio",ctx:"billing · alta · scade tra 5 giorni · stesso cliente",con:"Cliente senza contatto da 40 giorni — l'anno scorso aveva chiesto info per rescindere",ct:"warn"}},
+{a:{t:"Setup piattaforme OTA per nuovo appartamento Treviso",ctx:"onboarding mese 1 · alta · GC",con:"Il proprietario ha firmato 3 settimane fa. Continua a chiedere quando andiamo live. Alta stagione già partita.",ct:"warn"},
+ b:{t:"Rinnovare polizza assicurativa annuale — appartamento Venezia",ctx:"burocratica · alta · scaduta da 3 giorni",con:"La struttura ha 2 ospiti inside in questo momento. Non è assicurata.",ct:"danger"}},
+{a:{t:"Coordinare turnover pulizie post check-out",ctx:"operativa · media · GC 25% · €3.200/mese commissioni · ospite arriva tra 5 giorni",con:"Se non organizziamo: appartamento sporco all'arrivo, recensione 1 stella",ct:"warn"},
+ b:{t:"Rinnovo CIN struttura Padova",ctx:"burocratica · media · GO 15% · €700/mese commissioni · scade tra 5 giorni",con:"Se scade: struttura illegale, multa €5.000 — impatto legale indipendentemente dal valore cliente",ct:"danger"}},
+{a:{t:"Mediare conflitto proprietario-ospite su danni alla struttura",ctx:"complessa · GC · nessuna scadenza · aperta 1 settimana",con:"Ogni giorno che passa la situazione si irrigidisce. Rischio churn + recensione negativa.",ct:"warn"},
+ b:{t:"Inviare documento semplice al notaio (firma contratto Sig. Rossi)",ctx:"semplice · ~10 minuti · GO · scade domani",con:"Se non inviato oggi: il notaio slitta l'appuntamento, onboarding si blocca",ct:"danger"}},
+{a:{t:"Completare registrazione portale Ross1000 — struttura Sig. Marchetti",ctx:"burocratica · nessuna scadenza · aperta da 3 mesi · cliente contattato ieri, rapporto ottimo",con:"Ogni mese di ritardo = struttura fuori conformità regionale Veneto",ct:"warn"},
+ b:{t:"Rinnovo CIN bilocale Venezia — Sig. Ferretti",ctx:"burocratica · scadenza tra 15 giorni",con:"Cliente senza contatto da 50 giorni — non sappiamo se è soddisfatto del servizio",ct:"warn"}},
+{a:{t:"Business plan per lead HNWI con 2 immobili di lusso",ctx:"onboarding · alta · 🎯 collegata a OKR Q3 · scade tra 10 giorni",con:"Potenziale: €6.000/mese commissioni se acquisito. Lead caldo, vuole risposta rapida.",ct:"green"},
+ b:{t:"Versamento tassa soggiorno Q2",ctx:"burocratica · urgente · NON collegata a OKR · scade tra 2 giorni",con:"Se non paghi entro domani: mora 30% automatica. Importo: €2.400 → diventa €3.120.",ct:"danger"}},
+{a:{t:"Aggiornare listini estivi per nuovo appartamento",ctx:"operativa · media · GC · onboarding mese 1",con:"Ogni giorno di ritardo = prenotazioni estive perse. Alta stagione in corso.",ct:"warn"},
+ b:{t:"Organizzare sopralluogo per micro-investimento home staging",ctx:"operativa · alta · GC · cliente stabile da 2 anni, ha già portato 2 referral",con:"Il cliente ha chiesto questo esplicitamente nell'ultima call. Non farlo = deludere un alleato.",ct:"warn"}},
+{a:{t:"Inviare messaggio WhatsApp di aggiornamento al proprietario",ctx:"comunicazione · media · scade tra 7 giorni",con:"Durata: ~10 minuti · quick win — puoi farlo adesso in pausa caffè",ct:"info"},
+ b:{t:"Riscrivere testi annuncio multilingua per nuova stagione",ctx:"operativa · alta · scade tra 3 giorni",con:"Durata: ~2 ore · richiede blocco dedicato · stimato +15% occupazione",ct:"green"}},
+{a:{t:"Rinnovo CIN struttura — Sig. Bianchi",ctx:"burocratica · alta · scade tra 3 giorni · cliente GO 15%",con:"Se scade: struttura illegale + sanzione €5.000. Il valore del cliente non cambia la norma.",ct:"danger"},
+ b:{t:"Invio rendiconto mensile + analisi performance",ctx:"billing · alta · scade tra 3 giorni · cliente GC 25% · nessun contatto da 25gg",con:"Cliente ad alto valore (€2.800/mese commissioni) che non sente Moorent da quasi un mese",ct:"warn"}},
+]},
+];
+
+const ALL=[];
+SECS.forEach(s=>s.qs.forEach((q,i)=>ALL.push({...q,sid:s.id,sl:s.label,ss:s.sub,qn:i+1,qt:s.qs.length})));
+const TOT=ALL.length;
+let cur=0,ans=new Array(TOT).fill(null),uname="";
+
+function start(){
+  uname=document.getElementById('un').value.trim()||"Anonimo";
+  show('sq');render(0);
+}
+function show(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));document.getElementById(id).classList.add('active');}
+function setcon(elId,txt,ct){
+  const el=document.getElementById(elId);
+  if(!txt){el.style.display='none';return;}
+  el.style.display='block';
+  el.className='ccons'+(ct==='warn'?' warn':ct==='info'?' info':ct==='green'?' green':'');
+  el.innerHTML=txt;
+}
+function render(i){
+  const q=ALL[i];
+  document.getElementById('pf').style.width=((i/TOT)*100)+'%';
+  document.getElementById('pt').textContent=`Domanda ${i+1} di ${TOT}`;
+  document.getElementById('ps').textContent=`Sezione ${q.sid}/13`;
+  document.getElementById('ql').textContent=q.sl;
+  document.getElementById('qs').textContent=q.ss;
+  document.getElementById('qc').textContent=`Domanda ${q.qn} di ${q.qt} in questa sezione`;
+  document.getElementById('cat').textContent=q.a.t;
+  document.getElementById('cac').innerHTML=q.a.ctx;
+  setcon('cacon',q.a.con,q.a.ct);
+  document.getElementById('cbt').textContent=q.b.t;
+  document.getElementById('cbc').innerHTML=q.b.ctx;
+  setcon('cbcon',q.b.con,q.b.ct);
+  const a=ans[i];
+  ['bva','bvb','bvp'].forEach(id=>document.getElementById(id).classList.remove('active'));
+  document.getElementById('ca').className='tc';
+  document.getElementById('cb').className='tc';
+  if(a==='A'){document.getElementById('bva').classList.add('active');document.getElementById('ca').classList.add('sa');}
+  else if(a==='B'){document.getElementById('bvb').classList.add('active');document.getElementById('cb').classList.add('sb');}
+  else if(a==='P'){document.getElementById('bvp').classList.add('active');document.getElementById('ca').classList.add('sp');document.getElementById('cb').classList.add('sp');}
+  document.getElementById('nx').disabled=a===null;
+  document.getElementById('bk').disabled=i===0;
+}
+function vote(v){ans[cur]=v;render(cur);}
+function next(){if(ans[cur]===null)return;if(cur===TOT-1)showEnd();else{cur++;render(cur);}}
+function back(){if(cur>0){cur--;render(cur);}}
+function showEnd(){show('se');document.getElementById('mdo').textContent=genMd();}
+function genMd(){
+  const d=new Date().toLocaleDateString('it-IT',{day:'2-digit',month:'2-digit',year:'numeric'});
+  let md=`# Calibrazione Score Moorent PM\n**Operatore:** ${uname}  \n**Data:** ${d}  \n**Risposte:** ${ans.filter(a=>a!==null).length}/${TOT}\n\n---\n\n> A = lavoro Task A prima · B = lavoro Task B prima · P = parità\n\n---\n\n`;
+  SECS.forEach(s=>{
+    md+=`## ${s.label}\n\n*${s.ss}*\n\n| # | Task A | Task B | Risposta |\n|---|---|---|---|\n`;
+    const st=ALL.findIndex(q=>q.sid===s.id);
+    s.qs.forEach((q,qi)=>{const gi=st+qi;const r=ans[gi];const rl=r==='A'?'**A**':r==='B'?'**B**':r==='P'?'Parità':'–';md+=`| ${qi+1} | ${q.a.t} | ${q.b.t} | ${rl} |\n`;});
+    md+='\n';
+  });
+  return md;
+}
+function cpMd(){navigator.clipboard.writeText(genMd()).then(()=>{const m=document.getElementById('cm');m.textContent='✓ Copiato!';setTimeout(()=>m.textContent='',3000);});}
+function dlMd(){const b=new Blob([genMd()],{type:'text/markdown'});const u=URL.createObjectURL(b);const a=document.createElement('a');a.href=u;a.download=`score_${uname.toLowerCase().replace(/\s+/g,'_')}.md`;a.click();URL.revokeObjectURL(u);}
+document.getElementById('un').addEventListener('keydown',e=>{if(e.key==='Enter')start();});
+document.addEventListener('keydown',e=>{
+  if(!document.getElementById('sq').classList.contains('active'))return;
+  if(e.key==='ArrowLeft'||e.key==='a'||e.key==='A')vote('A');
+  else if(e.key==='ArrowRight'||e.key==='b'||e.key==='B')vote('B');
+  else if(e.key===' '||e.key==='p'||e.key==='P'){e.preventDefault();vote('P');}
+  else if(e.key==='Enter'&&ans[cur]!==null)next();
+  else if(e.key==='Backspace'&&cur>0)back();
+});
+</script>
+</body>
+</html>
